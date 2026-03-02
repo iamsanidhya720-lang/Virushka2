@@ -334,6 +334,10 @@ gameLoop();
 
 /* ---------------- RESET GAME ---------------- */
 function resetGame() {
+    // Stop hit sound immediately if still playing
+    hitSound.pause();
+    hitSound.currentTime = 0;
+
     bird.y = 250;
     bird.velocity = 0;
     pipes = [];
