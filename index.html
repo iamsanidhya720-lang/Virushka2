@@ -60,6 +60,12 @@ footer {
 footer a {
     color: #000;
     text-decoration: none;
+    padding: 0 8px;
+    border-right: 1px solid #000;
+}
+
+footer a:last-child {
+    border-right: none;
 }
 </style>
 </head>
@@ -76,9 +82,9 @@ footer a {
 </div>
 
 <footer>
-    <a href="https://instagram.com" target="_blank">Instagram</a> |
-    <a href="https://linked.in" target="_blank">LinkedIn</a> |
-    <a href="https://x.com" target="_blank">Twitter/X</a> |
+    <a href="https://instagram.com" target="_blank">Instagram</a>
+    <a href="https://linked.in" target="_blank">LinkedIn</a>
+    <a href="https://x.com" target="_blank">Twitter/X</a>
     <a href="https://sanidhyas.vercel.app" target="_blank">Portfolio</a>
 </footer>
 
@@ -141,10 +147,12 @@ let highScore = localStorage.getItem("highScore") || 0;
 let level = 1;
 let gameOver = false;
 let gameStarted = false;
+let hitSoundPlayed = false; // FIX 2: track if hit sound was already played this round
 
-let pipeGap = 150;
+/* FIX 3: Start easier values */
+let pipeGap = 200;       // was 150 — much more forgiving at start
 let pipeWidth = 52;
-let pipeSpeed = 2;
+let pipeSpeed = 1.5;     // was 2 — slower start
 
 let groundHeight = 112;
 
@@ -254,8 +262,9 @@ function update() {
 
             level = Math.floor(score / 5) + 1;
 
-            pipeSpeed = 2 + level * 0.2;
-            pipeGap = 150 - level * 3;
+            /* FIX 3: Progressive difficulty — gentler scaling */
+            pipeSpeed = 1.5 + level * 0.15;   // was 2 + level * 0.2
+            pipeGap = 200 - level * 4;         // was 150 - level * 3 (starts bigger, shrinks slowly)
             if (pipeGap < 110) pipeGap = 110;
         }
 
@@ -265,9 +274,7 @@ function update() {
             (bird.y < pipes[i].topHeight ||
              bird.y + bird.height > pipes[i].bottomY)
         ) {
-            gameOver = true;
-            hitSound.play();
-            fadeOutMusic();
+            triggerGameOver();
         }
 
         if (pipes[i].x + pipeWidth < 0) {
@@ -276,12 +283,22 @@ function update() {
     }
 
     if (bird.y + bird.height > 600 - groundHeight || bird.y < 0) {
-        gameOver = true;
-        hitSound.play();
-        fadeOutMusic();
+        triggerGameOver();
     }
 
     frame++;
+}
+
+/* FIX 2: Separate function so hit sound only plays once when game over is triggered */
+function triggerGameOver() {
+    if (!gameOver) {
+        gameOver = true;
+        if (!hitSoundPlayed) {
+            hitSound.play();
+            hitSoundPlayed = true;
+        }
+        fadeOutMusic();
+    }
 }
 
 /* ---------------- DRAW GAME ---------------- */
@@ -302,6 +319,7 @@ function draw() {
         ctx.fillRect(0,0,400,600);
         ctx.fillStyle = "#fff";
         ctx.font = "30px Arial";
+        ctx.textAlign = "center";
         ctx.fillText("Game Over", 200, 300);
         ctx.fillText("Click to Restart", 200, 340);
     }
@@ -324,6 +342,12 @@ function resetGame() {
     level = 1;
     gameOver = false;
     gameStarted = true;
+    hitSoundPlayed = false; // FIX 2: reset flag on restart
+
+    /* FIX 3: Reset to easy starting values */
+    pipeGap = 200;
+    pipeSpeed = 1.5;
+
     bgMusic.currentTime = 0;
     bgMusic.play();
 }
