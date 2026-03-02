@@ -27,7 +27,7 @@ canvas {
     display: block;
 }
 
-/* Start Overlay */
+/* Simple start overlay */
 #startOverlay {
     position: fixed;
     inset: 0;
@@ -50,24 +50,16 @@ canvas {
     margin-top: 10px;
 }
 
-/* Footer with proper segmentation */
+/* Footer */
 footer {
     position: fixed;
     bottom: 5px;
     font-size: 12px;
-    display: flex;
-    gap: 10px;
 }
 
 footer a {
     color: #000;
     text-decoration: none;
-    padding: 0 8px;
-    border-right: 1px solid #000;
-}
-
-footer a:last-child {
-    border-right: none;
 }
 </style>
 </head>
@@ -84,9 +76,9 @@ footer a:last-child {
 </div>
 
 <footer>
-    <a href="https://instagram.com" target="_blank">Instagram</a>
-    <a href="https://linked.in" target="_blank">LinkedIn</a>
-    <a href="https://x.com" target="_blank">Twitter/X</a>
+    <a href="https://instagram.com" target="_blank">Instagram</a> |
+    <a href="https://linked.in" target="_blank">LinkedIn</a> |
+    <a href="https://x.com" target="_blank">Twitter/X</a> |
     <a href="https://sanidhyas.vercel.app" target="_blank">Portfolio</a>
 </footer>
 
@@ -94,7 +86,7 @@ footer a:last-child {
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-/* RESPONSIVE CANVAS */
+/* ---------------- RESPONSIVE CANVAS ---------------- */
 function resizeCanvas() {
     const baseWidth = 400;
     const baseHeight = 600;
@@ -112,14 +104,14 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-/* LOAD IMAGES */
+/* ---------------- LOAD IMAGES ---------------- */
 const birdImage = new Image();
 birdImage.src = "bird.png";
 
 const pipeImage = new Image();
 pipeImage.src = "pipe.png";
 
-/* LOAD AUDIO */
+/* ---------------- LOAD AUDIO ---------------- */
 const bgMusic = new Audio("background.mp3");
 bgMusic.loop = true;
 bgMusic.volume = 0.3;
@@ -130,7 +122,7 @@ jumpSound.volume = 0.5;
 const hitSound = new Audio("hit.mp3");
 hitSound.volume = 0.6;
 
-/* GAME VARIABLES */
+/* ---------------- GAME VARIABLES ---------------- */
 let bird = {
     x: 80,
     y: 250,
@@ -149,15 +141,14 @@ let highScore = localStorage.getItem("highScore") || 0;
 let level = 1;
 let gameOver = false;
 let gameStarted = false;
-let gameOverSoundPlayed = false;
 
-let pipeGap = 170;  // Easier start
+let pipeGap = 150;
 let pipeWidth = 52;
 let pipeSpeed = 2;
 
 let groundHeight = 112;
 
-/* MUSIC FADE OUT */
+/* ---------------- FADE MUSIC ---------------- */
 function fadeOutMusic() {
     let fade = setInterval(() => {
         if (bgMusic.volume > 0.05) {
@@ -170,13 +161,13 @@ function fadeOutMusic() {
     }, 100);
 }
 
-/* DRAW BACKGROUND */
+/* ---------------- DRAW BACKGROUND ---------------- */
 function drawBackground() {
     ctx.fillStyle = "#4ec0ca";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-/* DRAW BIRD */
+/* ---------------- DRAW BIRD ---------------- */
 function drawBird() {
     ctx.save();
     ctx.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
@@ -191,7 +182,7 @@ function drawBird() {
     ctx.restore();
 }
 
-/* DRAW PIPE */
+/* ---------------- DRAW PIPE ---------------- */
 function drawPipe(x, y, width, height, flip) {
     ctx.save();
     if (flip) {
@@ -204,7 +195,7 @@ function drawPipe(x, y, width, height, flip) {
     ctx.restore();
 }
 
-/* DRAW SCORE */
+/* ---------------- DRAW SCORE ---------------- */
 function drawScore() {
     ctx.fillStyle = "#fff";
     ctx.strokeStyle = "#000";
@@ -223,7 +214,7 @@ function drawScore() {
     ctx.fillText("High: " + highScore, canvas.width/2, 130);
 }
 
-/* UPDATE GAME */
+/* ---------------- UPDATE GAME ---------------- */
 function update() {
     if (!gameStarted || gameOver) return;
 
@@ -236,7 +227,7 @@ function update() {
         bird.rotation = Math.min(bird.rotation + 0.03, 1.2);
     }
 
-    if (frame % 100 === 0) {  // Slower spawn for easier start
+    if (frame % 90 === 0) {
         let minHeight = 80;
         let maxHeight = 600 - groundHeight - pipeGap - 80;
         let topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
@@ -263,10 +254,9 @@ function update() {
 
             level = Math.floor(score / 5) + 1;
 
-            // Progressive difficulty
-            pipeSpeed = 2 + (level * 0.15);
-            pipeGap = 170 - (level * 4);
-            if (pipeGap < 115) pipeGap = 115;
+            pipeSpeed = 2 + level * 0.2;
+            pipeGap = 150 - level * 3;
+            if (pipeGap < 110) pipeGap = 110;
         }
 
         if (
@@ -276,6 +266,7 @@ function update() {
              bird.y + bird.height > pipes[i].bottomY)
         ) {
             gameOver = true;
+            hitSound.play();
             fadeOutMusic();
         }
 
@@ -286,13 +277,14 @@ function update() {
 
     if (bird.y + bird.height > 600 - groundHeight || bird.y < 0) {
         gameOver = true;
+        hitSound.play();
         fadeOutMusic();
     }
 
     frame++;
 }
 
-/* DRAW GAME */
+/* ---------------- DRAW GAME ---------------- */
 function draw() {
     drawBackground();
 
@@ -306,15 +298,8 @@ function draw() {
     if (gameStarted) drawScore();
 
     if (gameOver) {
-        if (!gameOverSoundPlayed) {
-            hitSound.currentTime = 0;
-            hitSound.play();
-            gameOverSoundPlayed = true;
-        }
-
         ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.fillRect(0,0,400,600);
-
         ctx.fillStyle = "#fff";
         ctx.font = "30px Arial";
         ctx.fillText("Game Over", 200, 300);
@@ -322,7 +307,7 @@ function draw() {
     }
 }
 
-/* GAME LOOP */
+/* ---------------- GAME LOOP ---------------- */
 function gameLoop() {
     update();
     draw();
@@ -330,29 +315,26 @@ function gameLoop() {
 }
 gameLoop();
 
-/* RESET GAME */
+/* ---------------- RESET GAME ---------------- */
 function resetGame() {
     bird.y = 250;
     bird.velocity = 0;
     pipes = [];
     score = 0;
     level = 1;
-    pipeGap = 170;
-    pipeSpeed = 2;
     gameOver = false;
     gameStarted = true;
-    gameOverSoundPlayed = false;
     bgMusic.currentTime = 0;
     bgMusic.play();
 }
 
-/* START BUTTON */
+/* ---------------- START BUTTON ---------------- */
 function startGame() {
     document.getElementById("startOverlay").style.display = "none";
     resetGame();
 }
 
-/* INPUT */
+/* ---------------- INPUT ---------------- */
 canvas.addEventListener("click", () => {
     if (gameOver) {
         resetGame();
