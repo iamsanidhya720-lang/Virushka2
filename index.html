@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Flappy Bird</title>
 
 <style>
@@ -20,11 +20,16 @@ body {
     min-height: 100vh;
     background: #4ec0ca;
     font-family: Arial, sans-serif;
+    touch-action: none;         /* prevent scroll interference on mobile */
+    user-select: none;          /* prevent text selection on tap */
+    -webkit-user-select: none;
 }
 
 canvas {
     border: 2px solid #000;
     display: block;
+    touch-action: none;         /* ensure touch events fire correctly on canvas */
+    cursor: pointer;
 }
 
 /* Simple start overlay */
@@ -147,7 +152,7 @@ let highScore = localStorage.getItem("highScore") || 0;
 let level = 1;
 let gameOver = false;
 let gameStarted = false;
-let hitSoundPlayed = false; // hit.mp3 only plays on the FIRST game over, never after restart
+let hitSoundPlayed = false; // resets each life so hit.mp3 plays every time bird hits
 
 /* FIX 3: Start easier values */
 let pipeGap = 200;       // was 150 — much more forgiving at start
@@ -282,15 +287,16 @@ function update() {
     frame++;
 }
 
-/* FIX 2: Separate function so hit sound only plays once when game over is triggered */
+/* triggerGameOver: stop music, play hit.mp3 once per death, show Game Over screen */
 function triggerGameOver() {
     if (!gameOver) {
         gameOver = true;
+        fadeOutMusic();           // stop background music immediately
         if (!hitSoundPlayed) {
-            hitSound.play();
-            hitSoundPlayed = true;
+            hitSound.currentTime = 0;
+            hitSound.play();      // play hit sound on this death
+            hitSoundPlayed = true; // prevent double-trigger within same death frame
         }
-        fadeOutMusic();
     }
 }
 
@@ -335,7 +341,7 @@ function resetGame() {
     level = 1;
     gameOver = false;
     gameStarted = true;
-    // hitSoundPlayed is intentionally NOT reset — hit.mp3 only ever plays once
+    hitSoundPlayed = false; // reset so hit.mp3 fires again on next death
 
     /* FIX 3: Reset to easy starting values */
     pipeGap = 200;
@@ -353,24 +359,32 @@ function startGame() {
 }
 
 /* ---------------- INPUT ---------------- */
-canvas.addEventListener("click", () => {
+function handleFlap() {
     if (gameOver) {
         resetGame();
-    } else {
+    } else if (gameStarted) {
         bird.velocity = bird.jump;
+        jumpSound.currentTime = 0;
         jumpSound.play();
     }
+}
+
+// Touch — prevent default to stop scroll/zoom on mobile
+canvas.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    handleFlap();
+}, { passive: false });
+
+// Click (desktop + some mobile browsers)
+canvas.addEventListener("click", () => {
+    handleFlap();
 });
 
+// Spacebar (desktop)
 document.addEventListener("keydown", e => {
     if (e.code === "Space") {
         e.preventDefault();
-        if (gameOver) {
-            resetGame();
-        } else {
-            bird.velocity = bird.jump;
-            jumpSound.play();
-        }
+        handleFlap();
     }
 });
 </script>
